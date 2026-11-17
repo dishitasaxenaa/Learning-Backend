@@ -3,7 +3,7 @@
 const express = require("express");
 const fs = require("fs");
 const url = require('url');
-const users = require("./MOCK_DATA.json");
+const mongoose = require("mongoose");
 
 const app = express();
 const PORT = 5001;
@@ -23,44 +23,63 @@ app.use((req, res, next) => {
     })
 })
 
+mongoose.connect("mongodb://127.0.0.1:27017/Project1")
+.then(() => { console.log("MongoDB connected"); })
+.catch((err) => { console.log("Error: ", err); });
+
+const userSchema = new mongoose.Schema({
+    firstName: {
+        type: String,
+        required : true
+    },
+    lastName: {
+        type: String,
+        required : false
+    },
+    email: {
+        type: String,
+        required : true,
+        unique: true
+    },
+    gender: {
+        type: String,
+        required: true
+    },
+    ip_address: {
+        type: String,
+        required: true
+    }
+})
+
+const User = new mongoose.model("user", userSchema) ;
+
 app.route("/users")
-    .get((req, res) => {
-        res.json(users);
-    }).post((req, res) => {
+    .get(async (req, res) => {
+        const users = await User.find({});
+        res.status(200).json(users);
+    }).post(async (req, res) => {
         const newUser = req.body;
-        users.push({...newUser, id: users.length + 1});
-        fs.writeFile("./MOCK_DATA.json", JSON.stringify(users), (err, data) => {
-            if(err) res.status(500);
-            else return res.status(200).json({ message: "User added successfully" });
+        await User.create({
+            firstName: newUser.first_name,
+            lastName: newUser.last_name,
+            email: newUser.email,
+            gender: newUser.gender,
+            ip_address: newUser.ip_address
         });
+        return res.status(201).json({ msg: "success" });
     });
 
 app.route("/users/:id")
-    .get((req, res) => {
-        const id = Number(req.params.id);
-        users.map((user) => { if(user.id == id) res.json(user); })
-    }).patch((req, res) => {
-        const id = Number(req.params.id);
+    .get(async (req, res) => {
+        const userSearched = await User.findById(req.params.id);
+        return res.status(200).json(userSearched);
+    }).patch(async (req, res) => {
         const body = req.body;
-        const idx = users.findIndex((user) => user.id === id );
-        if (idx === -1) return res.status(404).json({ message: "User not found" });
-        users[idx] = {...users[idx], ...body};
-        fs.writeFile("./MOCK_DATA.json", JSON.stringify(users), (err, data) => {
-            if(err){
-                console.log("Error: ", err);
-                return res.status(500);
-            } else return res.status(200).json({ message: "Information updated successfully" });
-        })
-    }).delete((req, res) => {
-        const id = Number(req.params.id);
-        const idx = users.findIndex((user) => user.id === id );
-        users.splice(idx, 1);
-        fs.writeFile("./MOCK_DATA.json", JSON.stringify(users), (err, data) => {
-            if(err){
-                console.log("Error: ", err);
-                res.json({status: 500});
-            } else return res.status(200).json({ message: "User deleted successfully" });
-        })
+        await User.findByIdAndUpdate(req.params.id, {...body});
+        return res.status(200).json({ msg: "Information updated successfully" });
+    }).delete(async (req, res) => {
+        await User.findByIdAndDelete(req.params.id);
+        return res.status(200).json({ msg: "User deleted successfully" });
     });
 
 app.listen(PORT, () => {
