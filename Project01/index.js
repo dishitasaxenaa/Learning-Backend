@@ -2,6 +2,7 @@
 
 const express = require("express");
 const fs = require("fs");
+const url = require('url');
 const users = require("./MOCK_DATA.json");
 
 const app = express();
@@ -9,25 +10,33 @@ const PORT = 5001;
 
 app.use(express.urlencoded({ extended: false }));
 
+app.use((req, res, next) => {
+    res.setHeader("X-Author", "Dishita Saxena");    
+    next();
+})
+
+app.use((req, res, next) => {
+    const url_parsed = url.parse(req.url, true);
+    //console.log(url_parsed);
+    fs.appendFile("log.txt", `${Date.now()} ${req.method} ${url_parsed.pathname}\n`, (err, data) => {
+        next();
+    })
+})
+
 app.route("/users")
     .get((req, res) => {
-        // fs.appendFile("log.txt", `${Date.now()} ${req.url}\n`, (err, data) => {});
         res.json(users);
     }).post((req, res) => {
         const newUser = req.body;
         users.push({...newUser, id: users.length + 1});
         fs.writeFile("./MOCK_DATA.json", JSON.stringify(users), (err, data) => {
-            if(err) console.log("Error: ", err);
-            else return res.json({
-                status: 200,
-                id: users[users.length-1].id
-            });
+            if(err) res.status(500);
+            else return res.status(200).json({ message: "User added successfully" });
         });
     });
 
 app.route("/users/:id")
     .get((req, res) => {
-        // fs.appendFile("log.txt", `${Date.now()} ${req.url}\n`, (err, data) => {});
         const id = Number(req.params.id);
         users.map((user) => { if(user.id == id) res.json(user); })
     }).patch((req, res) => {
