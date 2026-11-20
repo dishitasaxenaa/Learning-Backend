@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        table{
+            border-collapse: collapse;
+            margin: 20px;
+        }
+        table, th, td {
+          border: 1px solid black; /* Sets width, style, and color */
+        }
+    
+        th, td {
+          padding: 8px; /* Adds space inside cells */
+          text-align: left;
+        }
+    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+</head>
+<body>
+    <h1>URL Shortener</h1>
+    <form method="POST" action="/">
+        <p>Enter a URL: </p>
+        <input type="text" name="url" placeholder="https://example.com">
+        <button type="submit">Generate</button>
+        <% if (locals.clicks) { %>
+            <p>Number of visits : <%= clicks %> </p>
+        <% } %>
+    </form>
+    <% if (locals.shortCode) { %>
+        <p>Your shortened URL : http:localhost:5001/<%= shortCode %> </p>
+    <% } %>
+
+    <% if (locals.allURL.length > 0) { %>
+        <table>
+            <thead>
+                <tr>
+                    <th>S. No.</th>
+                    <th>URL</th>
+                    <th>Short Code</th>
+                    <th>Visits</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% allURL.forEach((url, idx) => { %>
+                    <tr>
+                        <td><%= idx+1 %></td>
+                        <td><%= url.url %></td>
+                        <td>http:localhost:5001/<%= url.shortCode %></td>
+                        <td><%= url.visitHistory.length %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    <% } %>
+    
+</body>
+</html>
